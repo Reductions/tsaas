@@ -5,7 +5,10 @@ defmodule TsaasWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/api", TsaasWeb do
+  scope "/topsort", TsaasWeb do
     pipe_through :api
+
+    post "/as-json", OrderingController, :as_json
+    post "/as-bash", OrderingController, :as_bash
   end
 end
