@@ -8,7 +8,6 @@ use Mix.Config
 # with webpack to recompile .js and .css sources.
 config :tsaas, TsaasWeb.Endpoint,
   http: [port: 4000],
-  debug_errors: true,
   code_reloader: true,
   check_origin: false,
   watchers: []
