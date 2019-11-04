@@ -32,11 +32,12 @@ defmodule Tsaas.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ex_json_schema, "~> 0.7.1"},
       {:phoenix, "~> 1.4.10"},
       {:phoenix_pubsub, "~> 1.1"},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"}
+      {:plug_cowboy, "~> 2.0"},
     ]
   end
 end
