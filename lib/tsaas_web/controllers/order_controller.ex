@@ -4,11 +4,15 @@ defmodule TsaasWeb.OrderController do
   @valid_formats ["json", "bash"]
 
   def order(conn, %{"format" => format} = params) when format in @valid_formats do
-    with :ok <- validate_request_body(params) do
+    with :ok <- validate_request_body(params),
+         {:ok, _dag} <- Tsaas.Dag.new(params["tasks"]) do
       send_response(conn, params)
     else
       {:validation_error, reason} ->
         send_error(conn, :bad_request, reason)
+
+      {:repeated_names_error, repeated} ->
+        send_error(conn, :bad_request, format_repeated_names_error(repeated))
     end
   end
 
@@ -56,6 +60,10 @@ defmodule TsaasWeb.OrderController do
 
   defp foramt_validation_error({text, path}) do
     %{reason: text, path: path}
+  end
+
+  defp format_repeated_names_error(names) do
+    %{reason: "There is more then one task with the same name.", names: names}
   end
 
   defp send_error(conn, error, message) do
