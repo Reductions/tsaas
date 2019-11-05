@@ -4,10 +4,13 @@ defmodule TsaasWeb.OrderController do
   @valid_formats ["json", "bash"]
 
   def order(conn, %{"format" => format} = params) when format in @valid_formats do
+    alias Tsaas.Graph
+
     with :ok <- validate_request_body(params),
-         {:ok, graph} <- Tsaas.Graph.new(params["tasks"]),
-         :ok <- Tsaas.Graph.validate_edges(graph) do
-      send_response(conn, params)
+         {:ok, graph} <- Graph.new(params["tasks"]),
+         :ok <- Graph.validate_edges(graph),
+         {:ok, ordered} <- Graph.order(graph) do
+      send_response(conn, ordered, format)
     else
       {:validation_error, reason} ->
         send_error(conn, :bad_request, reason)
@@ -17,6 +20,9 @@ defmodule TsaasWeb.OrderController do
 
       {:invalid_edge_error, invalid_list} ->
         send_error(conn, :bad_request, format_invalid_edges(invalid_list))
+
+      :cyclic_dependency_error ->
+        send_error(conn, :bad_request, "There is cyclic dependency between the tasks.")
     end
   end
 
@@ -24,12 +30,12 @@ defmodule TsaasWeb.OrderController do
     send_error(conn, :not_found, "Format '#{format}' is not supported!")
   end
 
-  defp send_response(conn, %{"format" => "json"} = body) do
-    json(conn, body["tasks"])
+  defp send_response(conn, ordered, "json") do
+    json(conn, ordered)
   end
 
-  defp send_response(conn, %{"format" => "bash"} = body) do
-    text(conn, inspect(body["tasks"]))
+  defp send_response(conn, oredered, "bash") do
+    text(conn, inspect(oredered))
   end
 
   @request_schema %{
