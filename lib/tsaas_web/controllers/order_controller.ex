@@ -13,29 +13,29 @@ defmodule TsaasWeb.OrderController do
       send_response(conn, ordered, format)
     else
       {:validation_error, reason} ->
-        send_error(conn, :bad_request, reason)
+        send_error(conn, format, :bad_request, reason)
 
       {:repeated_names_error, repeated} ->
-        send_error(conn, :bad_request, format_repeated_names_error(repeated))
+        send_error(conn, format, :bad_request, format_repeated_names_error(repeated))
 
       {:invalid_edge_error, invalid_list} ->
-        send_error(conn, :bad_request, format_invalid_edges(invalid_list))
+        send_error(conn, format, :bad_request, format_invalid_edges(invalid_list))
 
       :cyclic_dependency_error ->
-        send_error(conn, :bad_request, "There is cyclic dependency between the tasks.")
+        send_error(conn, format, :bad_request, "There is cyclic dependency between the tasks.")
     end
   end
 
   def order(conn, %{"format" => format}) do
-    send_error(conn, :not_found, "Format '#{format}' is not supported!")
+    send_error(conn, "json", :not_found, "Format '#{format}' is not supported!")
   end
 
   defp send_response(conn, ordered, "json") do
     json(conn, ordered)
   end
 
-  defp send_response(conn, oredered, "bash") do
-    text(conn, inspect(oredered))
+  defp send_response(conn, ordered, "bash") do
+    text(conn, bash_response(ordered))
   end
 
   @request_schema %{
@@ -82,9 +82,35 @@ defmodule TsaasWeb.OrderController do
     %{reason: "There are tasks that require nonexistent tasks.", nonexistent: names}
   end
 
-  defp send_error(conn, error, message) do
+  defp send_error(conn, format, error, message) do
+    error_message = %{error: %{details: message}}
+
     conn
     |> put_status(error)
-    |> json(%{error: %{details: message}})
+    |> (case format do
+          "json" ->
+            &json(&1, error_message)
+
+          "bash" ->
+            &text(&1, bash_error(error_message))
+        end).()
+  end
+
+  @bash_header """
+  #!/usr/bin/env bash
+
+  """
+
+  defp bash_error(error_message) do
+    [@bash_header, ">&2 echo ", Jason.encode!(error_message), "\nexit 1"]
+  end
+
+  defp bash_response(tasks) do
+    [
+      @bash_header,
+      tasks
+      |> Enum.map(fn task -> task[:command] end)
+      |> Enum.join("\n")
+    ]
   end
 end
