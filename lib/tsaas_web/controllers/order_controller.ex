@@ -5,7 +5,8 @@ defmodule TsaasWeb.OrderController do
 
   def order(conn, %{"format" => format} = params) when format in @valid_formats do
     with :ok <- validate_request_body(params),
-         {:ok, _dag} <- Tsaas.Dag.new(params["tasks"]) do
+         {:ok, dag} <- Tsaas.Dag.new(params["tasks"]),
+         :ok <- Tsaas.Dag.validate_edges(dag) do
       send_response(conn, params)
     else
       {:validation_error, reason} ->
@@ -13,6 +14,9 @@ defmodule TsaasWeb.OrderController do
 
       {:repeated_names_error, repeated} ->
         send_error(conn, :bad_request, format_repeated_names_error(repeated))
+
+      {:invalid_edge_error, invalid_list} ->
+        send_error(conn, :bad_request, format_invalid_edges(invalid_list))
     end
   end
 
@@ -52,7 +56,9 @@ defmodule TsaasWeb.OrderController do
 
   defp validate_request_body(body) do
     case ExJsonSchema.Validator.validate(@request_schema, body) do
-      :ok -> :ok
+      :ok ->
+        :ok
+
       {:error, reasons} ->
         {:validation_error, Enum.map(reasons, &foramt_validation_error/1)}
     end
@@ -64,6 +70,10 @@ defmodule TsaasWeb.OrderController do
 
   defp format_repeated_names_error(names) do
     %{reason: "There is more then one task with the same name.", names: names}
+  end
+
+  defp format_invalid_edges(names) do
+    %{reason: "There are tasks that require nonexistent tasks.", nonexistent: names}
   end
 
   defp send_error(conn, error, message) do

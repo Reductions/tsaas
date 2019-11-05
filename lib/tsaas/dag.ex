@@ -15,12 +15,37 @@ defmodule Tsaas.Dag do
   def new(tasks) when is_list(tasks) do
     tasks
     |> Enum.reduce({%{}, []}, &add_task/2)
-    |> case  do
-         {dag, []} ->
-           {:ok, dag}
-         {_, repeated} ->
-           {:repeated_names_error, Enum.uniq(repeated)}
+    |> case do
+      {dag, []} ->
+        {:ok, dag}
+
+      {_, repeated} ->
+        {:repeated_names_error, Enum.uniq(repeated)}
+    end
+  end
+
+  def validate_edges(dag) do
+    edges_ends =
+      dag
+      |> Map.values()
+      |> Enum.flat_map(& &1.edges_to)
+      |> Enum.into(MapSet.new())
+
+    all_nodes =
+      dag
+      |> Map.keys()
+      |> Enum.into(MapSet.new())
+
+    edges_ends
+    |> MapSet.difference(all_nodes)
+    |> MapSet.to_list()
+    |> case do
+         [] ->
+           :ok
+         invalid_list ->
+           {:invalid_edge_error, invalid_list}
        end
+
   end
 
   defp add_task(task, {dag, repeated}) do

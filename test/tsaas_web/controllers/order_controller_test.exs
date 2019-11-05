@@ -64,13 +64,53 @@ defmodule TsaasWeb.OrderControllerTest do
     end
 
     @tag request: %{
-      "tasks" => [%{"command" => "echo test", "name" => "task1", "requires" => [2.3]}]
-    }
-    test "response with 400 when 'tasks' contains object with 'requires' that has element different then string", %{
+           "tasks" => [%{"command" => "echo test", "name" => "task1", "requires" => [2.3]}]
+         }
+    test "response with 400 when 'tasks' contains object with 'requires' that has element different then string",
+         %{
+           conn: conn
+         } do
+      assert %{"error" => %{"details" => [%{"path" => "#/tasks/0/requires/0"}]}} =
+               json_response(conn, 400)
+    end
+
+    @tag request: %{
+           "tasks" => [
+             %{"command" => "echo test", "name" => "task1"},
+             %{"command" => "echo again", "name" => "task1"}
+           ]
+         }
+    test "response with 400 when 2 tasks with the same names are given", %{
       conn: conn
     } do
-      assert %{"error" => %{"details" => [%{"path" => "#/tasks/0/requires/0"}]}} =
-        json_response(conn, 400)
+      assert %{
+               "error" => %{
+                 "details" => %{
+                   "names" => ["task1"],
+                   "reason" => "There is more then one task with the same name."
+                 }
+               }
+             } = json_response(conn, 400)
+    end
+
+    @tag request: %{
+           "tasks" => [
+             %{"command" => "echo test", "name" => "task1", "requires" => ["not-a-task"]}
+           ]
+         }
+    test "response with 400 when 'tasks' contains a task that requires a nonexistent task",
+         %{
+           conn: conn
+         } do
+      assert %{
+               "error" => %{
+                 "details" =>
+                   %{
+                     "nonexistent" => ["not-a-task"],
+                     "reason" => "There are tasks that require nonexistent tasks."
+                   }
+               }
+             } = json_response(conn, 400)
     end
   end
 
