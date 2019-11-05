@@ -1,4 +1,4 @@
-defmodule Tsaas.Dag do
+defmodule Tsaas.Graph do
   defmodule Node do
     @enforce_keys [:id, :command, :edges_to]
     defstruct [:id, :command, :edges_to]
@@ -16,23 +16,23 @@ defmodule Tsaas.Dag do
     tasks
     |> Enum.reduce({%{}, []}, &add_task/2)
     |> case do
-      {dag, []} ->
-        {:ok, dag}
+      {graph, []} ->
+        {:ok, graph}
 
       {_, repeated} ->
         {:repeated_names_error, Enum.uniq(repeated)}
     end
   end
 
-  def validate_edges(dag) do
+  def validate_edges(graph) do
     edges_ends =
-      dag
+      graph
       |> Map.values()
       |> Enum.flat_map(& &1.edges_to)
       |> Enum.into(MapSet.new())
 
     all_nodes =
-      dag
+      graph
       |> Map.keys()
       |> Enum.into(MapSet.new())
 
@@ -48,13 +48,13 @@ defmodule Tsaas.Dag do
 
   end
 
-  defp add_task(task, {dag, repeated}) do
-    if Map.has_key?(dag, task["name"]) do
-      {dag, [task["name"] | repeated]}
+  defp add_task(task, {graph, repeated}) do
+    if Map.has_key?(graph, task["name"]) do
+      {graph, [task["name"] | repeated]}
     else
       task
       |> Node.new()
-      |> (&Map.put_new(dag, &1.id, &1)).()
+      |> (&Map.put_new(graph, &1.id, &1)).()
       |> (&{&1, repeated}).()
     end
   end

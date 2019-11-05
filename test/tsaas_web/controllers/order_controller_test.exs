@@ -104,7 +104,8 @@ defmodule TsaasWeb.OrderControllerTest do
          } do
       assert %{
                "error" => %{
-                 "details" =>
+          "details" =>
+
                    %{
                      "nonexistent" => ["not-a-task"],
                      "reason" => "There are tasks that require nonexistent tasks."

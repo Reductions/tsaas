@@ -5,8 +5,8 @@ defmodule TsaasWeb.OrderController do
 
   def order(conn, %{"format" => format} = params) when format in @valid_formats do
     with :ok <- validate_request_body(params),
-         {:ok, dag} <- Tsaas.Dag.new(params["tasks"]),
-         :ok <- Tsaas.Dag.validate_edges(dag) do
+         {:ok, graph} <- Tsaas.Graph.new(params["tasks"]),
+         :ok <- Tsaas.Graph.validate_edges(graph) do
       send_response(conn, params)
     else
       {:validation_error, reason} ->
