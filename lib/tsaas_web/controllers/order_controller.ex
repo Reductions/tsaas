@@ -110,7 +110,8 @@ defmodule TsaasWeb.OrderController do
       @bash_header,
       tasks
       |> Enum.map(fn task -> task[:command] end)
-      |> Enum.join("\n")
+      |> Enum.join("\n"),
+      "\n"
     ]
   end
 end
