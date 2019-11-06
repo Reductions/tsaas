@@ -68,7 +68,7 @@ defmodule Tsaas.Graph do
   end
 
   def order(graph) when is_map(graph) do
-    do_order(graph, []) |> IO.inspect()
+    do_order(graph, [])
   end
 
   defguardp is_empty(graph) when map_size(graph) == 0
