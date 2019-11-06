@@ -5,14 +5,28 @@ To start your Phoenix server:
   * Install dependencies with `mix deps.get`
   * Start Phoenix endpoint with `mix phx.server`
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+The server run on [`localhost:4000`](http://localhost:4000) by default.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+There are 2 endpoints that the server response to:
 
-## Learn more
+  * "/order/json" - accepts json with tasks and return json response
+  * "/order/bash" - accepts json with tasks and return text response with the bash script
 
-  * Official website: http://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Mailing list: http://groups.google.com/group/phoenix-talk
-  * Source: https://github.com/phoenixframework/phoenix
+A few request validations are made. If the validation fails a 400 status code is returned and the response contains detail about the error:
+  * in case of json the response follows the pattern:
+  ```json
+  {
+    'error': {
+      'details': {
+         ...
+      }
+    }
+  }
+  ```
+  * in case of bash a bash script that prints the same error is returned and exits with 1
+
+Validations that are made are:
+  * Does the request conform to a certain schema?
+  * Is there more then one task with the same name?
+  * Is there a task that requires task that is not in the list?
+  * Does the tasks form a cyclic dependency
