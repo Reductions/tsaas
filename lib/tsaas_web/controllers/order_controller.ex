@@ -8,7 +8,6 @@ defmodule TsaasWeb.OrderController do
 
     with :ok <- validate_request_body(params),
          {:ok, graph} <- Graph.new(params["tasks"]),
-         :ok <- Graph.validate_edges(graph),
          {:ok, ordered} <- Graph.order(graph) do
       send_response(conn, ordered, format)
     else
